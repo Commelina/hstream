@@ -26,6 +26,7 @@ library
                     Language.SQL.AST
                     Language.SQL.Parse
                     Language.SQL.Validatable
+                    Language.SQL.Codegen
   other-modules:    Language.SQL.Abs
                     Language.SQL.ErrM
                     Language.SQL.Extra
@@ -42,6 +43,14 @@ library
                   , mtl               ^>= 2.2
                   , text              ^>= 1.2
                   , time              >= 1.9.1 && < 2
+
+                  , aeson
+                  , unordered-containers
+                  , rio
+                  , hstream-lib
+                  , comonad
+                  , random
+                  , scientific
   default-language: Haskell2010
   ghc-options:      -Wall -Wcompat -Widentities -Wincomplete-record-updates
                     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints

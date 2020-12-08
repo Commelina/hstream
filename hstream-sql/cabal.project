@@ -1,0 +1,6 @@
+packages: ./*.cabal
+
+source-repository-package
+  type: git
+  location: https://github.com/daleiz/hstream-lib.git
+  tag: 56f06dc6c718d8cea7d613e121e5fcd8e2881ec2

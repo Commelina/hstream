@@ -77,3 +77,7 @@ extractRefNameFromExpr _ = (False, [])
 errWithPos :: LineCol -> String -> String
 errWithPos Nothing msg = "SQL Error: " <> msg
 errWithPos (Just (l,c)) msg = "SQL Error at line " <> show l <> ", col" <> show c <> ": " <> msg
+
+errGenWithPos :: LineCol -> String -> String
+errGenWithPos Nothing msg = "SQL Error when generating Task: " <> msg
+errGenWithPos (Just (l,c)) msg = "SQL Error when generating Task at line " <> show l <> ", col" <> show c <> ": " <> msg
