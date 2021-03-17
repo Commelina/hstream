@@ -7,3 +7,12 @@
 [submodule "z-yaml"]
 	path = z-yaml
 	url = git@github.com:ZHaskell/z-yaml.git
+[submodule "hstream-broker/proto3-suite"]
+	path = hstream-broker/proto3-suite
+	url = git@github.com:awakenetworks/proto3-suite.git
+[submodule "hstream-broker/proto3-wire"]
+	path = hstream-broker/proto3-wire
+	url = git@github.com:awakenetworks/proto3-wire.git
+[submodule "hstream-broker/gRPC-haskell"]
+	path = hstream-broker/gRPC-haskell
+	url = git@github.com:awakenetworks/gRPC-haskell.git

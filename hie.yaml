@@ -6,6 +6,12 @@ cradle:
     - path: "hstream/sql-example-mock/Example.hs"
       component: "hstream:exe:sql-example-mock"
 
+    - path: "hstream/server/Main.hs"
+      component: "hstream:exe:hstream-server"
+
+    - path: "hstream/client/Main.hs"
+      component: "hstream:exe:hstream-client"
+
     - path: "hstream/sql-example-logdevice/Example.hs"
       component: "hstream:exe:sql-example-logdevice"
 
@@ -72,5 +78,14 @@ cradle:
     - path: "z-io/test/"
       component: "Z-IO:test:Z-IO-Test"
 
+    - path: "z-io/bench/GetTime.hs"
+      component: "Z-IO:bench:z-io-gettime"
+
+    - path: "z-io/bench/Http.hs"
+      component: "Z-IO:exe:z-io-http-bench"
+
     - path: "z-yaml/./"
       component: "lib:Z-YAML"
+
+    - path: "z-yaml/test"
+      component: "Z-YAML:test:Z-YAML-Test"

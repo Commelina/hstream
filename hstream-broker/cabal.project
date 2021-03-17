@@ -1,0 +1,6 @@
+packages: ./*.cabal
+          ./gRPC-haskell/*.cabal
+          ./gRPC-haskell/core/*.cabal
+          ./proto3-wire/*.cabal
+          ./proto3-suite/*.cabal
+          ../hstream-store/*.cabal

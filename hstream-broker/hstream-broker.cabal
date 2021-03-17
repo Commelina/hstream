@@ -1,0 +1,82 @@
+cabal-version:      2.2
+name:               hstream-broker
+version:            0.1.0.0
+synopsis:
+  High performance stream processing platform for IoT data written in Haskell.
+
+description:
+  Please see the README on Github at
+  <https://github.com/hstreamdb/hstream#readme>
+
+license:            BSD-3-Clause
+license-file:       LICENSE
+copyright:          Copyright (c) 2020 EMQ Technologies Co., Ltd.
+author:             Commelina
+maintainer:         comonad@emqx.io
+category:           Streaming
+homepage:           https://github.com/hstreamdb/hstream
+bug-reports:        https://github.com/hstreamdb/hstream/issues
+build-type:         Simple
+extra-source-files: README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/hstreamdb/hstream
+
+library
+  exposed-modules:
+      HStream.Broker.API
+
+  build-depends:
+    , base              >=4.11 && <5
+    , binary
+    , bytestring
+    , containers
+    , deepseq
+    , grpc-haskell
+    , proto3-wire
+    , proto3-suite
+    , vector
+    , time
+    , text
+    , Z-Data
+    , Z-IO
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+executable server
+  main-is:          Server.hs
+  hs-source-dirs:   app
+  build-depends:
+      base                >=4.11 && <5
+    , bytestring
+    , grpc-haskell
+    , grpc-haskell-core
+    , optparse-generic
+    , proto3-suite
+    , proto3-wire
+    , Z-Data
+    , Z-IO
+    , hstream-broker
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+executable client
+  main-is:          Client.hs
+  hs-source-dirs:   app
+  build-depends:
+      base                >=4.11 && <5
+    , bytestring
+    , grpc-haskell
+    , grpc-haskell-core
+    , optparse-generic
+    , proto3-suite
+    , proto3-wire
+    , Z-Data
+    , Z-IO
+    , hstream-broker
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
