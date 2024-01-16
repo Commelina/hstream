@@ -74,3 +74,4 @@ constraints:
   , entropy == 0.4.1.7 || > 0.4.1.9
     -- https://github.com/nikita-volkov/deferred-folds/issues/6
   , deferred-folds == 0.9.18.3 || > 0.9.18.4
+  , base64 <1
