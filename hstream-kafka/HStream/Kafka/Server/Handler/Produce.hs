@@ -30,6 +30,9 @@ import qualified Kafka.Protocol.Error                  as K
 import qualified Kafka.Protocol.Message                as K
 import qualified Kafka.Protocol.Service                as K
 
+import qualified HStream.Server.HStreamApi        as A
+import qualified HStream.Common.Server.Lookup as Lookup
+
 -- acks: (FIXME: Currently we only support -1)
 --   0: The server will not send any response(this is the only case where the
 --      server will not reply to a request).
@@ -68,57 +71,72 @@ handleProduce ServerContext{..} _reqCtx req = do
                       else V.forM
     partitionResponses <- loopPart partitionData $ \partition -> do
       let Just (_, logid) = partitions V.!? (fromIntegral partition.index) -- TODO: handle Nothing
-      M.withLabel
-        M.totalProduceRequest
-        (topic.name, T.pack . show $ partition.index) $ \counter ->
-          void $ M.addCounter counter 1
-      let Just recordBytes = partition.recordBytes -- TODO: handle Nothing
-      Log.debug1 $ "Try to append to logid " <> Log.build logid
-                <> "(" <> Log.build partition.index <> ")"
-
-      -- [ACL] Generate response by the authorization result of the **topic**
-      case isTopicAuthzed of
-        False -> pure $ K.PartitionProduceResponse
-                  { index           = partition.index
-                  , errorCode       = K.TOPIC_AUTHORIZATION_FAILED
-                  , baseOffset      = -1
-                  , logAppendTimeMs = -1
-                  , logStartOffset  = -1
-                  }
+      theNode <- Lookup.lookupKafkaPersist metaHandle gossipContext loadBalanceHashRing scAdvertisedListenersKey (Lookup.KafkaResTopic $ T.pack $ show logid)
+      Log.info $ "==> me: " <> Log.buildString' serverID <> " lookup: " <> Log.buildString' (A.serverNodeId theNode)
+      case serverID == (A.serverNodeId theNode) of
+        False -> do
+          -- FIXME: this is inadiquate!!! We should clean the whole
+          --        offset table on node changes!!!
+          --K.cleanOffsetCache scOffsetManager logid
+          pure $ K.PartitionProduceResponse
+                 { index           = partition.index
+                 , errorCode       = K.UNKNOWN_TOPIC_OR_PARTITION
+                 , baseOffset      = -1
+                 , logAppendTimeMs = -1
+                 , logStartOffset  = -1
+                 }
         True -> do
-          -- TODO: PartitionProduceResponse.logAppendTimeMs
-          --
-          -- The timestamp returned by broker after appending the messages. If
-          -- CreateTime is used for the topic, the timestamp will be -1.  If
-          -- LogAppendTime is used for the topic, the timestamp will be the broker
-          -- local time when the messages are appended.
-          --
-          -- Currently, only support LogAppendTime
-          catches (do
-            (S.AppendCompletion{..}, offset) <-
-              appendRecords True scLDClient scOffsetManager
-                                 (topic.name, partition.index) logid recordBytes
-            Log.debug1 $ "Append done " <> Log.build appendCompLogID
-                      <> ", lsn: " <> Log.build appendCompLSN
-                      <> ", start offset: " <> Log.build offset
-            pure $ K.PartitionProduceResponse
-              { index           = partition.index
-              , errorCode       = K.NONE
-              , baseOffset      = offset
-              , logAppendTimeMs = appendCompTimestamp
-              , logStartOffset  = (-1) -- TODO: getLogStartOffset
-              })
-            [ Handler (\(K.DecodeError (ec, msg))-> do
-                Log.debug1 $ "Append DecodeError " <> Log.buildString' ec
-                          <> ", " <> Log.buildString' msg
+          M.withLabel
+            M.totalProduceRequest
+            (topic.name, T.pack . show $ partition.index) $ \counter ->
+              void $ M.addCounter counter 1
+          let Just recordBytes = partition.recordBytes -- TODO: handle Nothing
+          Log.debug1 $ "Try to append to logid " <> Log.build logid
+                    <> "(" <> Log.build partition.index <> ")"
+
+          -- [ACL] Generate response by the authorization result of the **topic**
+          case isTopicAuthzed of
+            False -> pure $ K.PartitionProduceResponse
+                      { index           = partition.index
+                      , errorCode       = K.TOPIC_AUTHORIZATION_FAILED
+                      , baseOffset      = -1
+                      , logAppendTimeMs = -1
+                      , logStartOffset  = -1
+                      }
+            True -> do
+              -- TODO: PartitionProduceResponse.logAppendTimeMs
+              --
+              -- The timestamp returned by broker after appending the messages. If
+              -- CreateTime is used for the topic, the timestamp will be -1.  If
+              -- LogAppendTime is used for the topic, the timestamp will be the broker
+              -- local time when the messages are appended.
+              --
+              -- Currently, only support LogAppendTime
+              catches (do
+                (S.AppendCompletion{..}, offset) <-
+                  appendRecords True scLDClient scOffsetManager
+                                     (topic.name, partition.index) logid recordBytes
+                Log.debug1 $ "Append done " <> Log.build appendCompLogID
+                          <> ", lsn: " <> Log.build appendCompLSN
+                          <> ", start offset: " <> Log.build offset
                 pure $ K.PartitionProduceResponse
                   { index           = partition.index
-                  , errorCode       = ec
-                  , baseOffset      = (-1)
-                  , logAppendTimeMs = (-1)
-                  , logStartOffset  = (-1)
+                  , errorCode       = K.NONE
+                  , baseOffset      = offset
+                  , logAppendTimeMs = appendCompTimestamp
+                  , logStartOffset  = (-1) -- TODO: getLogStartOffset
                   })
-            ]
+                [ Handler (\(K.DecodeError (ec, msg))-> do
+                    Log.debug1 $ "Append DecodeError " <> Log.buildString' ec
+                              <> ", " <> Log.buildString' msg
+                    pure $ K.PartitionProduceResponse
+                      { index           = partition.index
+                      , errorCode       = ec
+                      , baseOffset      = (-1)
+                      , logAppendTimeMs = (-1)
+                      , logStartOffset  = (-1)
+                      })
+                ]
 
     pure $ K.TopicProduceResponse topic.name (K.KaArray $ Just partitionResponses)
 
