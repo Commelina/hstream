@@ -11,6 +11,7 @@ import           Data.List                        (sort)
 import           HStream.Common.ConsistentHashing (HashRing, constructServerMap)
 import           HStream.Gossip.Types             (Epoch, GossipContext)
 import           HStream.Gossip.Utils             (getMemberListWithEpochSTM)
+import qualified HStream.Server.HStreamInternal as I
 
 type LoadBalanceHashRing = TVar (Epoch, HashRing)
 
@@ -21,13 +22,17 @@ initializeHashRing gc = atomically $ do
 
 -- However, reconstruct hashRing every time can be expensive
 -- when we have a large number of nodes in the cluster.
-updateHashRing :: GossipContext -> LoadBalanceHashRing -> IO ()
-updateHashRing gc hashRing = loop (0,[])
+updateHashRing :: GossipContext
+               -> LoadBalanceHashRing
+               -> ([I.ServerNode] -> [I.ServerNode] -> IO ())
+               -> IO ()
+updateHashRing gc hashRing onNodeChange = loop (0,[])
   where
-    loop (epoch, list)=
-      loop =<< atomically
-        ( do (epoch', list') <- getMemberListWithEpochSTM gc
-             when (epoch == epoch' && list == list') retry
-             writeTVar hashRing (epoch', constructServerMap list')
-             return (epoch', list')
-        )
+    loop (epoch, list) = do
+      x@(_,list') <- atomically $ do
+        (epoch', list') <- getMemberListWithEpochSTM gc
+        when (epoch == epoch' && list == list') retry
+        writeTVar hashRing (epoch', constructServerMap list')
+        return (epoch', list')
+      onNodeChange list list'
+      loop x

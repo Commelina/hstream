@@ -71,6 +71,7 @@ import qualified HStream.Store.Logger              as S
 import qualified HStream.ThirdParty.Protobuf       as Proto
 import           HStream.Utils                     (getProtoTimestamp)
 
+import qualified HStream.Kafka.Common.OffsetManager as K
 -------------------------------------------------------------------------------
 
 runApp :: IO ()
@@ -119,7 +120,8 @@ app config@ServerOpts{..} = do
       putMVar scMVar serverContext
 
       -- FIXME: safer way to handle this: what if updateHashRing failed?
-      void . forkIO $ updateHashRing gossipContext (loadBalanceHashRing serverContext)
+      void . forkIO $
+        updateHashRing gossipContext (loadBalanceHashRing serverContext) $ \_nodes _nodes' -> K.cleanAllOffsetCache (scOffsetManager serverContext)
 
       -- TODO: support tls (_tlsConfig)
       -- TODO: support SASL options

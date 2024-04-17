@@ -147,7 +147,7 @@ app config@ServerOpts{..} = do
       putMVar scMVar serverContext
 
       -- FIXME: safer way to handle this: what if updateHashRing failed?
-      void . forkIO $ updateHashRing gossipContext (loadBalanceHashRing serverContext)
+      void . forkIO $ updateHashRing gossipContext (loadBalanceHashRing serverContext) (\_ _ -> pure ())
 
 #ifdef HStreamUseGrpcHaskell
       grpcOpts <- defGrpcOpts _serverHost _serverPort _tlsConfig

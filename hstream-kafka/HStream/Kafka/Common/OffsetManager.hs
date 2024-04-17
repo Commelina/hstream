@@ -12,6 +12,8 @@ module HStream.Kafka.Common.OffsetManager
   , getLatestOffset
   , getLatestOffsetWithLsn
   , getOffsetByTimestamp
+
+  , cleanAllOffsetCache
   ) where
 
 import           Control.Concurrent
@@ -28,6 +30,7 @@ import           HStream.Kafka.Common.Read
 import           HStream.Kafka.Common.RecordFormat
 import qualified HStream.Store                     as S
 
+import Control.Monad
 -------------------------------------------------------------------------------
 
 type HashTable k v = H.BasicHashTable k v
@@ -97,6 +100,11 @@ withOffsetN m@OffsetManager{..} logid n f = do
 
 cleanOffsetCache :: OffsetManager -> Word64 -> IO ()
 cleanOffsetCache OffsetManager{..} = H.delete offsets
+
+cleanAllOffsetCache :: OffsetManager -> IO ()
+cleanAllOffsetCache OffsetManager{..} = do
+  list <- H.toList offsets
+  forM_ list $ \(k, _) -> H.delete offsets k
 
 -- | Get the oldest offset of a log
 getOldestOffset :: HasCallStack => OffsetManager -> Word64 -> IO (Maybe Int64)
